@@ -1,5 +1,18 @@
+use clap::Parser;
 use rand::{prelude::SliceRandom, Rng};
 use std::collections::HashSet;
+
+/// Generate a maze with the provided dimensions
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Cli {
+    /// The number of columns in the grid
+    #[clap(short, long, value_parser)]
+    columns: usize,
+    /// The number of rows in the grid
+    #[clap(short, long, value_parser)]
+    rows: usize,
+}
 
 fn generate_grid(columns: usize, rows: usize) -> Grid {
     vec![0; columns * rows]
@@ -96,13 +109,13 @@ fn walk(grid: &mut Grid, columns: usize, rows: usize) {
 }
 
 fn main() {
-    let columns = 40;
-    let rows = 25;
-    let mut grid = generate_grid(columns, rows);
+    let args = Cli::parse();
+
+    let mut grid = generate_grid(args.columns, args.rows);
     use std::time::Instant;
     let now = Instant::now();
     {
-        walk(&mut grid, columns, rows);
+        walk(&mut grid, args.columns, args.rows);
     }
     let elapsed = now.elapsed();
     println!("({}) {:?}", grid.len(), grid);
