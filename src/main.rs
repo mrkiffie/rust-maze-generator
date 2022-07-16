@@ -14,10 +14,6 @@ struct Cli {
     rows: usize,
 }
 
-fn generate_grid(columns: usize, rows: usize) -> Grid {
-    vec![0; columns * rows]
-}
-
 enum Direction {
     Up = 1,
     Right = 2,
@@ -51,14 +47,15 @@ fn get_neighbours(current_index: usize, columns: usize, rows: usize) -> Vec<Neig
 }
 
 fn walk(grid: &mut Grid, columns: usize, rows: usize) {
-    let mut index = rand::thread_rng().gen_range(0..(grid.len() - 1));
-    let mut stack = Vec::new();
-    let mut visited: HashSet<usize> = HashSet::new();
+    let size = columns * rows;
+    let mut index = rand::thread_rng().gen_range(0..(size - 1));
+    let mut stack = Vec::with_capacity(size);
+    let mut visited: HashSet<usize> = HashSet::with_capacity(size);
 
     stack.push(index);
     visited.insert(index);
 
-    while visited.len() < grid.len() {
+    while visited.len() < size {
         let neighbours: Vec<Neighbour> = get_neighbours(index, columns, rows)
             .into_iter()
             .filter(|x| !visited.contains(&x.1))
@@ -110,14 +107,14 @@ fn walk(grid: &mut Grid, columns: usize, rows: usize) {
 
 fn main() {
     let args = Cli::parse();
-
-    let mut grid = generate_grid(args.columns, args.rows);
+    let size = args.columns * args.rows;
+    let mut grid: Grid = vec![0; size];
     use std::time::Instant;
     let now = Instant::now();
     {
         walk(&mut grid, args.columns, args.rows);
     }
     let elapsed = now.elapsed();
-    println!("({}) {:?}", grid.len(), grid);
-    println!("Elapsed: {:.2?}", elapsed);
+    println!("({size}) {grid:?}");
+    println!("Elapsed: {elapsed:.2?}");
 }
