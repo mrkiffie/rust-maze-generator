@@ -1,5 +1,5 @@
 use clap::Parser;
-use rand::{prelude::SliceRandom, Rng};
+use rand::{prelude::SliceRandom, Rng, SeedableRng};
 use std::collections::HashSet;
 
 /// Generate a maze with the provided dimensions
@@ -12,6 +12,9 @@ struct Cli {
     /// The number of rows in the grid
     #[clap(short, long, value_parser)]
     rows: usize,
+    /// A number to use as the seed
+    #[clap(short, long, value_parser)]
+    seed: Option<u64>,
 }
 
 enum Direction {
@@ -46,9 +49,9 @@ fn get_neighbours(current_index: usize, columns: usize, rows: usize) -> Vec<Neig
     neighbours
 }
 
-fn walk(grid: &mut Grid, columns: usize, rows: usize) {
+fn walk<R: Rng>(grid: &mut Grid, columns: usize, rows: usize, rng: &mut R) {
     let size = columns * rows;
-    let mut index = rand::thread_rng().gen_range(0..(size - 1));
+    let mut index = rng.gen_range(0..(size - 1));
     let mut stack = Vec::with_capacity(size);
     let mut visited: HashSet<usize> = HashSet::with_capacity(size);
 
@@ -62,7 +65,7 @@ fn walk(grid: &mut Grid, columns: usize, rows: usize) {
             .collect();
 
         if neighbours.len() > 0 {
-            let neighbour = neighbours.choose(&mut rand::thread_rng());
+            let neighbour = neighbours.choose(rng);
             match neighbour {
                 None => {
                     println!("No neighbours!");
@@ -109,10 +112,16 @@ fn main() {
     let args = Cli::parse();
     let size = args.columns * args.rows;
     let mut grid: Grid = vec![0; size];
+
+    let mut rng = match args.seed {
+        Some(seed) => rand::rngs::StdRng::seed_from_u64(seed),
+        None => rand::rngs::StdRng::from_entropy(),
+    };
+
     use std::time::Instant;
     let now = Instant::now();
     {
-        walk(&mut grid, args.columns, args.rows);
+        walk(&mut grid, args.columns, args.rows, &mut rng);
     }
     let elapsed = now.elapsed();
     println!("({size}) {grid:?}");
